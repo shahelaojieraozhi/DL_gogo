@@ -33,6 +33,13 @@ k, num_epochs, lr, weight_decay, batch_size = 5, 100, 0.002, 2, 256
 
 mes_loss = nn.MSELoss()
 
+
+def log_rmse(net, features, labels):
+    clipped_preds = torch.clamp(net(features), 1, float('inf'))
+    rmse = torch.sqrt(mes_loss(torch.log(clipped_preds), torch.log(labels)))
+    return rmse.item()
+
+
 model = TF(in_features=330, drop=0.).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
@@ -42,7 +49,7 @@ train_loader = data.DataLoader(mydata, batch_size=batch_size, shuffle=True)
 in_features = len(train_loader)
 
 
-def train_epoch(show_interval=10):
+def train_epoch():
     train_ls, it_count = 0, 0
     for batch_idx, train_data in enumerate(train_loader, 0):
         features, labels = train_data
@@ -54,15 +61,14 @@ def train_epoch(show_interval=10):
         optimizer.step()
         train_ls += loss.item()
         it_count += 1
-        # if it_count != 0 and it_count % show_interval == 0:
-        #     print("%d, loss: %.3e" % (it_count, loss.item()))
+
     return train_ls / it_count
 
 
 if __name__ == '__main__':
     count = 0
     writer = SummaryWriter('./logs')
-    for epoch in range(100):
+    for epoch in range(1000):
         count += 1
         train_loss = train_epoch()
         writer.add_scalar("train_loss", train_loss, count)  # add_scalar 添加标量
